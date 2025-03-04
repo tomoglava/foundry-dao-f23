@@ -60,19 +60,18 @@ contract MyGovernorTest is Test {
         bytes memory encodedFunctionCall = abi.encodeWithSignature("store(uint256)", valueToStore);
 
         values.push(0);
-
         calldatas.push(encodedFunctionCall);
         targets.push(address(box));
 
+        // 1. make a proposal
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
 
-        console.log("proposalId", proposalId);
-        //console.log("state", governor.state(proposalId)); //pending = 0 or 1?
-
         // use the actual voting delay from MyGovernor
+        // proposal cannot be voted on before the voting delay, it has to be active
         vm.warp(block.timestamp + VOTING_DELAY * 12 + 1);
         vm.roll(block.number + VOTING_DELAY + 1); // now it should be active
 
+        // 2. vote on proposal
         string memory reason = "reason this and that";
         //against 0
         //for 1
@@ -90,6 +89,7 @@ contract MyGovernorTest is Test {
         governor.queue(targets, values, calldatas, descriptionHash);
 
         // advance past the timelock delay (3600 seconds)
+        // proposal cannot be executed before the timelock delay (min delay)
         vm.warp(block.timestamp + MIN_DELAY + 1);
         vm.roll(block.number + 1);
 
