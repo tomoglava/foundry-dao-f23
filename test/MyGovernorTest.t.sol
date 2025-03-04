@@ -18,7 +18,7 @@ contract MyGovernorTest is Test {
     uint256 public constant INITIAL_SUPPLY = 100 ether;
 
     uint256 public constant MIN_DELAY = 3600;
-    uint256 public constant VOTING_DELAY = 1;
+    uint256 public constant VOTING_DELAY = 7200;
     uint256 public constant VOTING_PERIOD = 50400;
 
     address[] public proposers;
@@ -69,7 +69,8 @@ contract MyGovernorTest is Test {
         console.log("proposalId", proposalId);
         //console.log("state", governor.state(proposalId)); //pending = 0 or 1?
 
-        vm.warp(block.timestamp + VOTING_DELAY + 1);
+        // use the actual voting delay from MyGovernor
+        vm.warp(block.timestamp + VOTING_DELAY * 12 + 1);
         vm.roll(block.number + VOTING_DELAY + 1); // now it should be active
 
         string memory reason = "reason this and that";
@@ -81,15 +82,16 @@ contract MyGovernorTest is Test {
         governor.castVoteWithReason(proposalId, voteWay, reason);
 
         //voting period is set to 1 week (50400) through UI of openzeppelin
-        vm.warp(block.timestamp + VOTING_PERIOD + 1);
+        vm.warp(block.timestamp + VOTING_PERIOD * 12 + 1);
         vm.roll(block.number + VOTING_PERIOD + 1);
 
         // 3. queue tx
         bytes32 descriptionHash = keccak256(abi.encodePacked(description));
         governor.queue(targets, values, calldatas, descriptionHash);
 
+        // advance past the timelock delay (3600 seconds)
         vm.warp(block.timestamp + MIN_DELAY + 1);
-        vm.roll(block.number + MIN_DELAY + 1);
+        vm.roll(block.number + 1);
 
         // 4.execute tx
         console.log("box value", box.getNumber());
